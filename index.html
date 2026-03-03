@@ -87,34 +87,46 @@
   .section-divider { text-align: center; margin: 10px 0 40px; position: relative; }
   .section-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(46,204,113,0.5), transparent); }
   .section-divider span { background: var(--espresso); padding: 0 16px; position: relative; font-size: 18px; }
+الصق الجزء ده بدل القديم:
 
-  .logo-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto;
-    padding: 20px 0 10px;
-  }
-  .logo-container svg {
-    width: min(200px, 50vw);
-    height: auto;
-  }
-  .coffee-bar-logo {
-    width: min(200px, 50vw);
-    height: auto;
-    margin: 10px auto 0;
-    filter: brightness(0) invert(1);
-    display: block;
-  }
-  .coffee-bar-sub {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(11px, 2.5vw, 15px);
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    color: var(--accent);
-    opacity: 0.9;
-    margin-top: 10px;
-  }
+```css
+.logo-container {
+  display: flex;
+  justify-content: flex-start; /* يخليهم ناحية الشمال */
+  align-items: center;
+  gap: 20px; /* مسافة بين اللوجوهين */
+  margin: 0 auto;
+  padding: 20px 0 10px;
+}
+
+.logo-container svg {
+  width: min(200px, 50vw); /* اللوجو الأساسي */
+  height: auto;
+}
+
+.coffee-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.coffee-bar-logo {
+  width: min(120px, 30vw); /* أصغر من الأساسي */
+  height: auto;
+  filter: brightness(0) invert(1);
+}
+
+.coffee-bar-sub {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(10px, 2vw, 13px);
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.9;
+  margin-top: 6px;
+}
+```
+
 </style>
 </head>
 <body>
