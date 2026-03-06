@@ -3,18 +3,18 @@ import csv
 import io
 import re
 import json
+import hashlib
 
 # =============================================
-# 🔗 رابط Google Sheets (CSV)
+# 🔗 روابط Google Sheets
 # =============================================
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNymcwLC-PZdkS07k46Yg3dIYhtUoWIsXypczOI0UcV3woXR7xXZkKFh60jJMn0-xH-q6j60P0aXWt/pub?gid=0&single=true&output=csv"
+OFFERS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNymcwLC-PZdkS07k46Yg3dIYhtUoWIsXypczOI0UcV3woXR7xXZkKFh60jJMn0-xH-q6j60P0aXWt/pub?gid=1081349164&single=true&output=csv"
 
-def fetch_sheet():
-    print("📥 جاري تحميل البيانات من Google Sheets...")
-    r = requests.get(SHEET_URL)
+def fetch_csv(url):
+    r = requests.get(url)
     r.encoding = 'utf-8'
-    reader = csv.DictReader(io.StringIO(r.text))
-    return list(reader)
+    return list(csv.DictReader(io.StringIO(r.text)))
 
 def parse_data(rows):
     cats = {}
@@ -74,39 +74,75 @@ def build_grid_html(cats, cat_order):
         html += f'      <div class="cat-card" onclick="showCat(\'{cid}\')"><span class="ci">{c["icon"]}</span><span class="ca">{c["ar"]}</span><span class="ce">{c["en"]}</span></div>\n'
     return html
 
+def mk_id(text):
+    return 'off_' + hashlib.md5(text.encode()).hexdigest()[:6]
+
+def build_offers_html(offers):
+    html = ''
+    for o in offers:
+        name_ar = o.get('name_ar', '').strip()
+        name_en = o.get('name_en', '').strip()
+        price   = o.get('price', '').strip()
+        save_ar = o.get('save_ar', '').strip()
+        icon    = o.get('icon', '').strip()
+        if not name_ar or not price:
+            continue
+        oid = mk_id(name_ar)
+        display_ar = f"{icon} {name_ar}" if icon else name_ar
+        html += f'''      <div class="offer-card">
+        <div class="offer-ar">{display_ar}</div>
+        <div class="offer-en">{name_en}</div>
+        <div class="offer-bottom">
+          <div class="offer-price">{price} <span>ج</span></div>
+          <span class="offer-save">{save_ar}</span>
+        </div>
+        <div class="qty-row" style="justify-content:center;margin-top:14px">
+          <button class="qty-btn" onclick="chg('{oid}','{display_ar}',{price},-1,'العروض')">−</button>
+          <span class="qty-num" id="q_{oid}">0</span>
+          <button class="qty-btn" onclick="chg('{oid}','{display_ar}',{price},1,'العروض')">+</button>
+        </div>
+      </div>\n'''
+    return html
+
 def main():
-    # 1. قرا الملف الحالي كما هو
+    # 1. قرا الملف الحالي
     with open("menu.html", "r", encoding="utf-8") as f:
         html = f.read()
 
-    # 2. حمّل البيانات من الشيت
-    rows = fetch_sheet()
-    print(f"✅ تم تحميل {len(rows)} صف")
+    # 2. حدّث المنتجات
+    print("📥 تحميل المنتجات...")
+    rows = fetch_csv(SHEET_URL)
     cats, cat_order = parse_data(rows)
-    print(f"✅ تم تحليل {len(cats)} كاتيجوري: {', '.join(cat_order)}")
+    print(f"✅ {len(cats)} كاتيجوري")
 
-    # 3. استبدل const cats فقط - مش أي حاجة تانية
+    # استبدل const cats
     new_cats_js = build_cats_js(cats, cat_order)
-    html = re.sub(
-        r'const cats = \{.*?\n\};',
-        new_cats_js,
-        html,
-        flags=re.DOTALL
-    )
+    html = re.sub(r'const cats = \{.*?\n\};', new_cats_js, html, flags=re.DOTALL)
 
-    # 4. استبدل الـ grid بتاع الكاتيجوريز في الـ HTML
+    # استبدل الـ grid
     new_grid = build_grid_html(cats, cat_order)
     html = re.sub(
         r'(<div class="grid">)\s*.*?(\s*</div>\s*\n\s*<footer)',
         lambda m: m.group(1) + '\n' + new_grid + '    ' + m.group(2),
-        html,
-        flags=re.DOTALL
+        html, flags=re.DOTALL
     )
 
-    # 5. احفظ الملف
+    # 3. حدّث العروض
+    print("📥 تحميل العروض...")
+    offers = fetch_csv(OFFERS_URL)
+    print(f"✅ {len(offers)} عرض")
+
+    new_offers_html = build_offers_html(offers)
+    html = re.sub(
+        r'(<div class="offers-grid">)\s*.*?(\s*</div>\s*\n\s*<footer)',
+        lambda m: m.group(1) + '\n' + new_offers_html + '    ' + m.group(2),
+        html, flags=re.DOTALL
+    )
+
+    # 4. احفظ
     with open("menu.html", "w", encoding="utf-8") as f:
         f.write(html)
-    print("✅ تم تحديث menu.html بنجاح! (بدون تغيير أي حاجة تانية)")
+    print("✅ تم تحديث menu.html بنجاح!")
 
 if __name__ == "__main__":
     main()
