@@ -24,7 +24,7 @@ jobs:
       - name: 🔄 Generate menu.html from Google Sheets
         run: python generate_menu.py
 
-- name: 💾 Commit & Push
+      - name: 💾 Commit & Push
         run: |
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
